@@ -1,212 +1,149 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WeaversNest — Chat & Voice</title>
-  <!-- Tailwind via CDN for quick styling -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weaversnest Voice Chat</title>
   <style>
-    html,body,#app{height:100%;}
-    .message-bubble { max-width: 80%; }
-    .scroll-shadow { box-shadow: inset 0 -20px 20px -20px rgba(0,0,0,0.2); }
+    body {
+      margin: 0;
+      background: #f9f9f9;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Floating mic button */
+    #voiceBtn {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      background-color: #ff3b30;
+      color: #fff;
+      font-size: 28px;
+      cursor: pointer;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      transition: background-color 0.3s;
+      z-index: 9999;
+    }
+
+    #voiceBtn.active {
+      background-color: #28a745;
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800">
-  <div id="app" class="h-full flex items-center justify-center p-6">
-    <div class="w-full max-w-3xl h-[85vh] bg-white rounded-2xl shadow-lg grid grid-rows-[auto_1fr_auto] overflow-hidden">
-      <header class="flex items-center justify-between px-6 py-4 border-b">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-sky-500 rounded-xl flex items-center justify-center text-white font-bold">WN</div>
-          <div>
-            <div class="text-lg font-semibold">WeaversNest Chat & Voice</div>
-            <div class="text-xs text-slate-500">Local demo — publish to GitHub Pages at your repo</div>
-          </div>
-        </div>
-        <div class="flex items-center gap-3">
-          <button id="clearBtn" class="text-xs px-3 py-1 rounded-md border">Clear</button>
-          <button id="downloadBtn" class="text-xs px-3 py-1 rounded-md bg-sky-600 text-white">Download log</button>
-        </div>
-      </header>
+<body>
 
-      <main class="px-6 py-4 overflow-auto scroll-smooth" id="chatArea" aria-live="polite">
-        <!-- messages inserted here -->
-      </main>
+  <!-- Your Chatbase Chatbot -->
+  <script>
+  (function(){
+    if(!window.chatbase || window.chatbase("getState")!=="initialized"){
+      window.chatbase=(...arguments)=>{
+        if(!window.chatbase.q){window.chatbase.q=[]}
+        window.chatbase.q.push(arguments)
+      };
+      window.chatbase=new Proxy(window.chatbase,{
+        get(target,prop){
+          if(prop==="q"){return target.q}
+          return(...args)=>target(prop,...args)
+        }
+      });
+    }
+    const onLoad=function(){
+      const script=document.createElement("script");
+      script.src="https://www.chatbase.co/embed.min.js";
+      script.id="xYe8wmdbOM5iVwIDOCkGk"; // your Agent ID
+      script.domain="www.chatbase.co";
+      document.body.appendChild(script);
+    };
+    if(document.readyState==="complete"){onLoad();}
+    else{window.addEventListener("load",onLoad);}
+  })();
+  </script>
 
-      <footer class="px-6 py-4 border-t flex items-center gap-3">
-        <div class="flex-1 flex items-center gap-3 bg-slate-100 p-2 rounded-xl">
-          <button id="micBtn" title="Toggle speech recognition" class="p-2 rounded-md bg-white border shadow-sm">
-            <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v11m0 0a3 3 0 003-3V5a3 3 0 00-6 0v4a3 3 0 003 3z" />
-            </svg>
-          </button>
-
-          <input id="input" class="flex-1 bg-transparent outline-none text-sm" placeholder="Type a message or press the mic" aria-label="Message input" />
-
-          <select id="voiceSelect" class="text-sm p-2 rounded-md border bg-white">
-            <option value="default">Use synthesis voice</option>
-          </select>
-
-          <button id="sendBtn" class="px-4 py-2 rounded-md bg-emerald-500 text-white">Send</button>
-        </div>
-      </footer>
-    </div>
-  </div>
+  <!-- Floating Microphone Button -->
+  <button id="voiceBtn">🎤</button>
 
   <script>
-    // Simple single-file Chat + Voice app
-    // Author: generated for WeaversNest GitHub Pages
-    // How to publish: save this file as index.html at the root of your repository dhrubadas1-ship-it/weaversnest-voice-C and push to GitHub.
-    // Then enable Pages (branch: main or gh-pages) in repository Settings → Pages. GitHub Pages will serve it at https://dhrubadas1-ship-it.github.io/weaversnest-voice-C/
-
-    // --- DOM refs ---
-    const chatArea = document.getElementById('chatArea');
-    const input = document.getElementById('input');
-    const sendBtn = document.getElementById('sendBtn');
-    const micBtn = document.getElementById('micBtn');
-    const micIcon = document.getElementById('micIcon');
-    const clearBtn = document.getElementById('clearBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const voiceSelect = document.getElementById('voiceSelect');
-
-    // --- State ---
-    let messages = JSON.parse(localStorage.getItem('wn_messages') || '[]');
+    // 🎙️ Voice Input + 🔊 Voice Output
+    const voiceBtn = document.getElementById('voiceBtn');
     let recognizing = false;
     let recognition;
-    let synth = window.speechSynthesis;
-    let voices = [];
 
-    // --- Utilities ---
-    function save() { localStorage.setItem('wn_messages', JSON.stringify(messages)); }
-    function timeNow(){ return new Date().toLocaleTimeString(); }
+    if ('webkitSpeechRecognition' in window) {
+      recognition = new webkitSpeechRecognition();
+      recognition.lang = 'en-IN';
+      recognition.continuous = false;
+      recognition.interimResults = false;
 
-    function render(){
-      chatArea.innerHTML = '';
-      messages.forEach(m => {
-        const cont = document.createElement('div');
-        cont.className = 'my-3 flex ' + (m.from === 'user' ? 'justify-end' : 'justify-start');
-        const bubble = document.createElement('div');
-        bubble.className = 'message-bubble p-3 rounded-xl ' + (m.from === 'user' ? 'bg-emerald-50 text-slate-900' : 'bg-slate-100 text-slate-900');
-        bubble.innerHTML = `<div class="text-sm">${escapeHtml(m.text)}</div><div class="text-xs text-slate-400 mt-1 text-right">${m.time}</div>`;
-        cont.appendChild(bubble);
-        chatArea.appendChild(cont);
-      });
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-    function pushMessage(from, text){
-      const m = {from, text, time: timeNow()};
-      messages.push(m);
-      save();
-      render();
-    }
-
-    // --- Mock server handler ---
-    async function sendToServer(text){
-      // Placeholder: replace this function with your server or serverless function
-      // Example: fetch('https://your-server.example.com/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message:text})})
-      //           .then(r=>r.json())
-      //           .then(data=> data.reply )
-      // For demo we return a quick canned reply
-      await new Promise(r=>setTimeout(r, 500));
-      return "I heard: '" + text + "' — this is a demo reply. Replace sendToServer() with a network call to your chat AI or backend to get real replies.";
-    }
-
-    // --- Send flow ---
-    async function handleSend(){
-      const text = input.value.trim();
-      if(!text) return;
-      input.value = '';
-      pushMessage('user', text);
-      // show interim
-      pushMessage('bot', '...');
-      // get reply
-      const reply = await sendToServer(text);
-      // replace last bot message
-      messages = messages.slice(0, -1);
-      pushMessage('bot', reply);
-      speak(reply);
-    }
-
-    sendBtn.addEventListener('click', handleSend);
-    input.addEventListener('keydown', e => { if(e.key === 'Enter') handleSend(); });
-
-    clearBtn.addEventListener('click', ()=>{ if(confirm('Clear chat history?')){ messages = []; save(); render(); }});
-
-    downloadBtn.addEventListener('click', ()=>{
-      const blob = new Blob([JSON.stringify(messages, null, 2)], {type:'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'weaversnest-chat-log.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    });
-
-    // --- Speech Recognition ---
-    function initRecognition(){
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if(!SpeechRecognition) return null;
-      const r = new SpeechRecognition();
-      r.lang = 'en-IN';
-      r.interimResults = false;
-      r.maxAlternatives = 1;
-      r.onstart = ()=>{ recognizing = true; micIcon.classList.add('animate-pulse'); micIcon.style.fill = '#ef4444'; micIcon.style.color=''; };
-      r.onend = ()=>{ recognizing = false; micIcon.classList.remove('animate-pulse'); micIcon.style.fill=''; };
-      r.onresult = (ev)=>{
-        const text = ev.results[0][0].transcript;
-        input.value = text;
-        handleSend();
+      recognition.onstart = () => {
+        recognizing = true;
+        voiceBtn.classList.add('active');
       };
-      r.onerror = e=>{ console.error('Speech recognition error', e); alert('Speech recognition error: '+ (e.error || e.message)); };
-      return r;
+
+      recognition.onend = () => {
+        recognizing = false;
+        voiceBtn.classList.remove('active');
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript.trim();
+        console.log("You said:", transcript);
+        // Send as user message
+        if (window.chatbase) {
+          window.chatbase('sendMessage', transcript);
+        } else {
+          alert("Chatbase widget not ready yet. Try again in a few seconds.");
+        }
+      };
+    } else {
+      alert("Sorry, your browser doesn't support Speech Recognition.");
     }
 
-    micBtn.addEventListener('click', ()=>{
-      if(!recognition){ recognition = initRecognition(); if(!recognition){ alert('Speech Recognition API not supported in this browser. Try Chrome or Edge.'); return; } }
-      if(recognizing){ recognition.stop(); }
-      else recognition.start();
+    voiceBtn.addEventListener('click', () => {
+      if (recognizing) {
+        recognition.stop();
+        return;
+      }
+      recognition.start();
     });
 
-    // --- Speech Synthesis ---
-    function populateVoices(){
-      voices = synth.getVoices();
-      voiceSelect.innerHTML = '';
-      const defaultOpt = document.createElement('option'); defaultOpt.value = 'default'; defaultOpt.textContent = 'Default voice (' + (voices[0]?voices[0].name:'none') + ')'; voiceSelect.appendChild(defaultOpt);
-      voices.forEach((v,i)=>{
-        const o = document.createElement('option'); o.value = i; o.textContent = v.name + (v.lang ? ' — ' + v.lang : ''); voiceSelect.appendChild(o);
-      });
-    }
-
-    function speak(text){
-      if(!synth) return;
-      synth.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      const sel = voiceSelect.value;
-      if(sel !== 'default' && voices[+sel]) u.voice = voices[+sel];
-      u.lang = voices[u.voice ? voices.indexOf(u.voice) : 0]?.lang || 'en-US';
-      synth.speak(u);
-    }
-
-    if(speechSynthesis){
-      populateVoices();
-      if(typeof speechSynthesis.onvoiceschanged !== 'undefined') speechSynthesis.onvoiceschanged = populateVoices;
-    }
-
-    // --- Initialize ---
-    render();
-
-    // Accessibility: focus input on load
-    input.focus();
-
-    // Expose small API for integration (optional)
-    window.WeaversNest = {
-      pushMessage,
-      messages,
-      setServerFunc(fn){ sendToServer = fn; }
+    // Text-to-Speech for replies
+    const speakText = (text) => {
+      if (!('speechSynthesis' in window)) return;
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-IN';
+      utterance.rate = 1.0;
+      speechSynthesis.speak(utterance);
     };
 
-    // Example: to connect to a real backend, in your own code call:
-    // WeaversNest.setServerFunc(async (text)=>{ const r = await fetch('https://your-server.example.com/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})}); const j=await r.json(); return j.reply; });
+    // Observe chatbase messages for replies
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1 && node.textContent && node.textContent.length > 3) {
+            // Speak only bot replies (heuristic)
+            if (node.textContent.includes("Chatbase") || node.textContent.includes("AI") || node.className.includes("bot")) {
+              speakText(node.textContent);
+            }
+          }
+        });
+      });
+    });
 
+    // Observe entire document for new messages
+    observer.observe(document.body, { childList: true, subtree: true });
   </script>
 </body>
 </html>
