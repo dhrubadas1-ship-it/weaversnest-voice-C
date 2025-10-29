@@ -170,58 +170,115 @@
   });
 
   // Try to post message to Chatbase widget iframe; if not possible, show recognized text and require user to press Copy (user gesture needed for clipboard)
-  function postToWidgetOrShow(text){
-    // 1) Attempt to find an iframe created by the widget
-    const widgetIframe = document.querySelector('iframe');
-    if(widgetIframe && widgetIframe.contentWindow){
-      try{
-        widgetIframe.contentWindow.postMessage({type:'user_utterance', text}, '*');
-        statusEl.textContent = 'Sent to chatbot.';
-        recognizedContainer.style.display = 'none';
-        return;
-      }catch(e){
-        console.warn('postMessage failed', e);
-      }
-    }
+  <script>
+/* --- Replacement: improved openChatWidget + postToWidgetOrShow --- */
 
-    // 2) Fallback: show the recognized text and ask user to press Copy (explicit user gesture required for clipboard)
-    recognizedText.value = text;
-    recognizedContainer.style.display = 'flex';
-    statusEl.textContent = 'Tap Copy then paste the text into the chat input.';
+function openChatWidget(){
+  // Try common launcher selectors and click the first we find
+  const selectors = [
+    '[aria-label="open chat"]',
+    '[aria-label="Open chat"]',
+    '[aria-label="Chat"]',
+    '.cb-chat-button',
+    '.chatbase-widget-button',
+    '.cb-launcher',
+    '#chatbaseWidgetTarget button',
+    '.cbbf-button',
+    '.cb-toggle'
+  ];
+
+  for(const s of selectors){
+    try {
+      const el = document.querySelector(s);
+      if(el){
+        el.click();
+        console.log('Clicked launcher:', s);
+        return true;
+      }
+    } catch(e){
+      console.warn('openChatWidget selector error', e);
+    }
   }
 
-  // Copy text button: this is a user gesture, so clipboard API should be allowed if the page is served over HTTPS.
-  copyTextBtn.addEventListener('click', async () => {
-    try{
-      await navigator.clipboard.writeText(recognizedText.value);
-      statusEl.textContent = 'Text copied to clipboard. Paste it into the chat widget.';
-      // Optionally, focus the chat widget by opening it (best effort)
-      openChatWidget();
-    }catch(err){
-      console.warn('clipboard write failed', err);
-      // fallback: select textarea to allow manual copy
-      recognizedText.select();
-      statusEl.textContent = 'Unable to copy automatically. Please select and copy the text manually.';
-    }
-  });
+  // If no launcher element found, try focusing the widget container
+  const wrap = document.getElementById('chatbaseWidgetTarget');
+  if(wrap){
+    wrap.scrollIntoView({behavior:'smooth', block:'center'});
+    console.log('Scrolled widget target into view');
+    return true;
+  }
 
-  // Share button: attempt clipboard copy on user click; if blocked, show prompt with URL for manual copy
-  shareBtn.addEventListener('click', async (e)=>{
-    e.preventDefault();
-    const url = location.href;
-    try{
-      await navigator.clipboard.writeText(url);
-      alert('Link copied. Share it with your customers!');
-    }catch(err){
-      console.warn('clipboard copy failed', err);
-      // Show a prompt that user can copy from
-      const manual = window.prompt('Copy this link and share it with customers:', url);
-      if(manual !== null) {
-        // user pressed OK (even if they didn't copy) — no further action
+  console.log('No launcher found to open the chat widget.');
+  return false;
+}
+
+function postToWidgetOrShow(text){
+  const iframe = document.querySelector('iframe');
+  const tryPost = (msg) => {
+    if(!iframe || !iframe.contentWindow) return false;
+    try {
+      iframe.contentWindow.postMessage(msg, '*');
+      console.log('posted to iframe:', msg);
+      return true;
+    } catch(e){
+      console.warn('postMessage failed for', msg, e);
+      return false;
+    }
+  };
+
+  // 1) If chat launcher exists, open it (user-visible), then try posting after short delays
+  const opened = openChatWidget();
+
+  // Send a quick focus hint first (some widgets accept this)
+  const focusHint = { type: 'focus_input', source: 'voice_pwa' };
+  const shapes = [
+    {type: 'user_utterance', text},
+    {event: 'message', payload: {text}},
+    {type: 'message', message: text},
+    {action: 'sendMessage', data: {text}},
+    {source: 'web', text},
+    {message: text}
+  ];
+
+  // Try multiple attempts: immediate, after 250ms, after 600ms
+  const attemptPostSequence = async () => {
+    if(iframe && iframe.contentWindow){
+      // attempt focus hint first
+      tryPost(focusHint);
+    }
+    for(const delay of [0, 250, 600, 1000]){
+      await new Promise(r => setTimeout(r, delay));
+      // try posting several shapes each attempt
+      for(const s of shapes){
+        if(tryPost(s)){
+          statusEl.textContent = 'Sent to chatbot.';
+          recognizedContainer.style.display = 'none';
+          // ensure widget is visible
+          openChatWidget();
+          return true;
+        }
       }
     }
-  });
+    return false;
+  };
 
+  attemptPostSequence().then(ok => {
+    if(ok) return;
+    // fallback: show recognized text and ask user to copy/paste
+    recognizedText.value = text;
+    recognizedContainer.style.display = 'flex';
+    statusEl.textContent = 'Could not send automatically — Tap Copy then paste into the chat.';
+    // open chat so user can paste
+    setTimeout(() => openChatWidget(), 250);
+  }).catch(err => {
+    console.warn('post attempt error', err);
+    recognizedText.value = text;
+    recognizedContainer.style.display = 'flex';
+    statusEl.textContent = 'Could not send automatically — Tap Copy then paste into the chat.';
+    setTimeout(() => openChatWidget(), 250);
+  });
+}
+</script>
   // Try to open/activate the chat widget (best effort): click known widget toggle if present
   function openChatWidget(){
     // Many widgets create a button with aria-label or role; try common selectors
