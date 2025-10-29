@@ -1,64 +1,26 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weaversnest Voice Chat</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WeaversNest — Voice + Chatbase (Netlify)</title>
   <style>
-    body {
-      margin: 0;
-      background: #f9f9f9;
-      font-family: Arial, sans-serif;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    /* Floating mic button */
-    #voiceBtn {
-      position: fixed;
-      bottom: 90px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      border: none;
-      background-color: #ff3b30;
-      color: #fff;
-      font-size: 28px;
-      cursor: pointer;
-      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-      transition: background-color 0.3s;
-      z-index: 9999;
-    }
-
-    #voiceBtn.active {
-      background-color: #28a745;
-      animation: pulse 1.2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
+    body { margin:0; font-family:Arial,system-ui; background:#f6f7fb; min-height:100vh; }
+    #voiceBtn { position:fixed; right:20px; bottom:90px; width:64px; height:64px; border-radius:50%; border:0; background:#ff3b30; color:#fff; font-size:28px; cursor:pointer; box-shadow:0 6px 20px rgba(0,0,0,.16); z-index:9999; }
+    #voiceBtn.active{ background:#16a34a; animation:pulse 1.2s infinite; }
+    @keyframes pulse {0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+    #replyToast { position:fixed; right:20px; bottom:170px; max-width:420px; background:#fff; border-radius:10px; padding:12px 14px; box-shadow:0 8px 30px rgba(0,0,0,.12); z-index:9998; display:none; font-size:14px; color:#081124; }
+    #replyToast .label { font-size:12px; color:#6b7280; margin-bottom:6px; }
   </style>
 </head>
 <body>
 
-  <!-- Your Chatbase Chatbot -->
+  <!-- Chatbase embed (agent id prefilled) -->
   <script>
   (function(){
-    if(!window.chatbase || window.chatbase("getState")!=="initialized"){
-      window.chatbase=(...arguments)=>{
-        if(!window.chatbase.q){window.chatbase.q=[]}
-        window.chatbase.q.push(arguments)
-      };
-      window.chatbase=new Proxy(window.chatbase,{
-        get(target,prop){
-          if(prop==="q"){return target.q}
-          return(...args)=>target(prop,...args)
-        }
-      });
+    if(!window.chatbase||window.chatbase("getState")!=="initialized"){
+      window.chatbase=(...arguments)=>{ if(!window.chatbase.q){window.chatbase.q=[]} window.chatbase.q.push(arguments) };
+      window.chatbase=new Proxy(window.chatbase,{ get(target,prop){ if(prop==="q"){return target.q} return(...args)=>target(prop,...args) }});
     }
     const onLoad=function(){
       const script=document.createElement("script");
@@ -67,83 +29,122 @@
       script.domain="www.chatbase.co";
       document.body.appendChild(script);
     };
-    if(document.readyState==="complete"){onLoad();}
-    else{window.addEventListener("load",onLoad);}
+    if(document.readyState==="complete"){ onLoad(); } else { window.addEventListener("load", onLoad); }
   })();
   </script>
 
-  <!-- Floating Microphone Button -->
-  <button id="voiceBtn">🎤</button>
+  <!-- floating mic -->
+  <button id="voiceBtn" title="Speak">🎤</button>
+
+  <!-- small toast for proxy replies -->
+  <div id="replyToast" role="status" aria-live="polite">
+    <div class="label">Assistant (from proxy):</div>
+    <div id="replyText"></div>
+  </div>
 
   <script>
-    // 🎙️ Voice Input + 🔊 Voice Output
+    // ---------------- CONFIG ----------------
+    // When hosting on Netlify (both frontend + functions), use the relative path below:
+    let SERVER_ENDPOINT = '/.netlify/functions/chat';
+    // ----------------------------------------
+
     const voiceBtn = document.getElementById('voiceBtn');
-    let recognizing = false;
-    let recognition;
+    const replyToast = document.getElementById('replyToast');
+    const replyText = document.getElementById('replyText');
 
-    if ('webkitSpeechRecognition' in window) {
-      recognition = new webkitSpeechRecognition();
-      recognition.lang = 'en-IN';
-      recognition.continuous = false;
-      recognition.interimResults = false;
+    const synth = window.speechSynthesis;
+    let voices = [];
+    function populateVoices(){ voices = synth.getVoices(); }
+    if (speechSynthesis) { populateVoices(); if (typeof speechSynthesis.onvoiceschanged !== 'undefined') speechSynthesis.onvoiceschanged = populateVoices; }
 
-      recognition.onstart = () => {
-        recognizing = true;
-        voiceBtn.classList.add('active');
-      };
-
-      recognition.onend = () => {
-        recognizing = false;
-        voiceBtn.classList.remove('active');
-      };
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.trim();
-        console.log("You said:", transcript);
-        // Send as user message
-        if (window.chatbase) {
-          window.chatbase('sendMessage', transcript);
-        } else {
-          alert("Chatbase widget not ready yet. Try again in a few seconds.");
-        }
-      };
-    } else {
-      alert("Sorry, your browser doesn't support Speech Recognition.");
+    function speak(text){
+      try {
+        if (!text || !('speechSynthesis' in window)) return;
+        synth.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-IN';
+        if (voices && voices.length) u.voice = voices.find(v=>v.lang && v.lang.toLowerCase().includes('en')) || voices[0];
+        synth.speak(u);
+      } catch (e) { console.warn('TTS failed', e); }
     }
 
-    voiceBtn.addEventListener('click', () => {
-      if (recognizing) {
-        recognition.stop();
-        return;
-      }
-      recognition.start();
-    });
+    function showReplyToast(text){
+      replyText.textContent = text;
+      replyToast.style.display = 'block';
+      clearTimeout(showReplyToast._t);
+      showReplyToast._t = setTimeout(()=> replyToast.style.display = 'none', 7000);
+    }
 
-    // Text-to-Speech for replies
-    const speakText = (text) => {
-      if (!('speechSynthesis' in window)) return;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-IN';
-      utterance.rate = 1.0;
-      speechSynthesis.speak(utterance);
-    };
-
-    // Observe chatbase messages for replies
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === 1 && node.textContent && node.textContent.length > 3) {
-            // Speak only bot replies (heuristic)
-            if (node.textContent.includes("Chatbase") || node.textContent.includes("AI") || node.className.includes("bot")) {
-              speakText(node.textContent);
-            }
-          }
+    async function sendToProxy(message){
+      try {
+        const r = await fetch(SERVER_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ message })
         });
-      });
+        if (!r.ok) {
+          const t = await r.text();
+          console.error('Proxy error', r.status, t);
+          return { error:true, text: 'Proxy error ' + r.status };
+        }
+        const j = await r.json();
+        return { error:false, text: j.reply || j.result || j.message || '' };
+      } catch (err) {
+        console.error('Network/proxy error', err);
+        return { error:true, text: 'Network error' };
+      }
+    }
+
+    // Speech recognition flow
+    let recognition, recognizing=false;
+    function initRecognition(){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) return null;
+      const r = new SR();
+      r.lang = 'en-IN';
+      r.interimResults = false;
+      r.maxAlternatives = 1;
+      r.onstart = ()=>{ recognizing = true; voiceBtn.classList.add('active'); };
+      r.onend   = ()=>{ recognizing = false; voiceBtn.classList.remove('active'); };
+      r.onresult = async (ev) => {
+        const text = ev.results[0][0].transcript.trim();
+        console.log('Heard:', text);
+        // Open the widget UI if available
+        try { window.chatbase && window.chatbase.open && window.chatbase.open(); } catch(e){ /* ignore */ }
+        // Send to your Netlify function (proxy)
+        const res = await sendToProxy(text);
+        if (res.error) {
+          showReplyToast('[Error] ' + res.text);
+          speak('[Error] ' + res.text);
+        } else {
+          const reply = res.text || '(no response)';
+          showReplyToast(reply);
+          speak(reply);
+        }
+      };
+      r.onerror = (e)=>{ console.error('Recognition error', e); alert('Speech recognition error: '+(e.error||e.message||e)); };
+      return r;
+    }
+
+    voiceBtn.addEventListener('click', ()=>{
+      if (!recognition) recognition = initRecognition();
+      if (!recognition) { alert('Speech Recognition not available in this browser. Use Chrome/Edge.'); return; }
+      if (recognizing) recognition.stop(); else recognition.start();
     });
 
-    // Observe entire document for new messages
-    observer.observe(document.body, { childList: true, subtree: true });
+    // If chatbase widget emits assistant messages, speak them too (best-effort)
+    window.addEventListener('load', ()=>{
+      try {
+        if (window.chatbase && typeof window.chatbase.addEventListener === 'function') {
+          window.chatbase.addEventListener('assistant-message', (ev)=> {
+            const content = ev?.data?.content;
+            if (content) { speak(content); showReplyToast(content); }
+          });
+        }
+      } catch(e){ console.warn('chatbase event hook failed', e); }
+    });
+
+    console.info('Voice->proxy ready. SERVER_ENDPOINT =', SERVER_ENDPOINT);
   </script>
 </body>
 </html>
