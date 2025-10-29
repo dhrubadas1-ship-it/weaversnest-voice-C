@@ -2,334 +2,211 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Weavers Nest — Voice Chat Assistant</title>
-  <meta name="description" content="Voice-enabled chat assistant for Weavers Nest (Chatbase). Speak and listen — installable PWA." />
-  <meta name="theme-color" content="#0f766e" />
-  <link rel="icon" href="data:;base64,="> 
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WeaversNest — Chat & Voice</title>
+  <!-- Tailwind via CDN for quick styling -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root{--bg:#f7f7f8;--card:#ffffff;--accent:#0f766e;--muted:#6b7280}
-    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;background:var(--bg)}
-    .app{display:flex;flex-direction:column;height:100vh}
-    header{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);box-shadow:0 2px 8px rgba(15,118,110,0.06)}
-    .logo{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
-    h1{font-size:16px;margin:0}
-    main{flex:1;display:grid;grid-template-rows:auto 1fr auto;padding:16px;gap:12px}
-    .embed-wrap{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 6px 20px rgba(16,185,129,0.06);min-height:380px;position:relative}
-    .controls{display:flex;gap:8px;align-items:center}
-    .mic{width:56px;height:56px;border-radius:999px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:20px;box-shadow:0 8px 20px rgba(15,118,110,0.24);border:4px solid rgba(255,255,255,0.12);cursor:pointer}
-    .mic.listening{background:#ef4444}
-    .status{font-size:13px;color:var(--muted)}
-    footer{padding:12px 16px;text-align:center;font-size:13px;color:var(--muted)}
-    .install{background:linear-gradient(90deg,#10b981,#059669);color:#fff;padding:8px 12px;border-radius:8px;border:0}
-    .hint{font-size:13px;color:var(--muted)}
-    .recognized{margin-top:12px;padding:10px;border-radius:8px;background:#f3f4f6;display:flex;gap:8px;align-items:center}
-    .recognized textarea{flex:1;padding:8px;border-radius:6px;border:1px solid #e5e7eb;background:white}
-    .btn{background:var(--accent);color:white;padding:8px 10px;border-radius:8px;border:0;cursor:pointer}
-    @media (max-width:640px){header{padding:10px}main{padding:12px}.mic{width:48px;height:48px}}
+    html,body,#app{height:100%;}
+    .message-bubble { max-width: 80%; }
+    .scroll-shadow { box-shadow: inset 0 -20px 20px -20px rgba(0,0,0,0.2); }
   </style>
 </head>
-<body>
-  <div class="app" id="app">
-    <header>
-      <div class="logo">WN</div>
-      <div>
-        <h1>Weavers Nest — Voice Assistant</h1>
-        <div class="hint">Speak to ask about tours, bookings and Nameri information</div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <button id="installBtn" class="install" style="display:none">Install App</button>
-      </div>
-    </header>
-
-    <main>
-      <div class="controls">
-        <div id="micBtn" class="mic" title="Tap to speak">🎙️</div>
-        <div style="display:flex;flex-direction:column">
-          <div id="status" class="status">Press 🎙️ and speak. Supported on Chrome/Edge/Android.</div>
-          <div style="height:6px"></div>
-          <div class="hint">If voice not supported, type in the chat inside the widget.</div>
+<body class="bg-slate-50 text-slate-800">
+  <div id="app" class="h-full flex items-center justify-center p-6">
+    <div class="w-full max-w-3xl h-[85vh] bg-white rounded-2xl shadow-lg grid grid-rows-[auto_1fr_auto] overflow-hidden">
+      <header class="flex items-center justify-between px-6 py-4 border-b">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-gradient-to-br from-emerald-400 to-sky-500 rounded-xl flex items-center justify-center text-white font-bold">WN</div>
+          <div>
+            <div class="text-lg font-semibold">WeaversNest Chat & Voice</div>
+            <div class="text-xs text-slate-500">Local demo — publish to GitHub Pages at your repo</div>
+          </div>
         </div>
-      </div>
+        <div class="flex items-center gap-3">
+          <button id="clearBtn" class="text-xs px-3 py-1 rounded-md border">Clear</button>
+          <button id="downloadBtn" class="text-xs px-3 py-1 rounded-md bg-sky-600 text-white">Download log</button>
+        </div>
+      </header>
 
-      <div class="embed-wrap" id="embedWrap">
-        <!-- Chatbase widget will be injected here using the embed script (recommended instead of iframe) -->
-        <div id="chatbaseWidgetTarget" style="width:100%;height:100%"></div>
-      </div>
+      <main class="px-6 py-4 overflow-auto scroll-smooth" id="chatArea" aria-live="polite">
+        <!-- messages inserted here -->
+      </main>
 
-      <div id="recognizedContainer" class="recognized" style="display:none">
-        <textarea id="recognizedText" rows="2" readonly></textarea>
-        <button id="copyTextBtn" class="btn">Copy</button>
-      </div>
+      <footer class="px-6 py-4 border-t flex items-center gap-3">
+        <div class="flex-1 flex items-center gap-3 bg-slate-100 p-2 rounded-xl">
+          <button id="micBtn" title="Toggle speech recognition" class="p-2 rounded-md bg-white border shadow-sm">
+            <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v11m0 0a3 3 0 003-3V5a3 3 0 00-6 0v4a3 3 0 003 3z" />
+            </svg>
+          </button>
 
-      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between">
-        <div class="hint">Your voice session is local — audio never leaves the browser.</div>
-        <div><a id="shareBtn" href="#">Share</a></div>
-      </div>
-    </main>
+          <input id="input" class="flex-1 bg-transparent outline-none text-sm" placeholder="Type a message or press the mic" aria-label="Message input" />
 
-    <footer>
-      Powered by Weavers Nest • <span id="ver">v1.0</span>
-    </footer>
+          <select id="voiceSelect" class="text-sm p-2 rounded-md border bg-white">
+            <option value="default">Use synthesis voice</option>
+          </select>
+
+          <button id="sendBtn" class="px-4 py-2 rounded-md bg-emerald-500 text-white">Send</button>
+        </div>
+      </footer>
+    </div>
   </div>
 
   <script>
-  // CONFIG: put your Chatbase Agent ID below (from the deploy widget snippet)
-  const CHATBOT_AGENT_ID = 'xYe8wmdbOM5iVwIDOCkGk';
+    // Simple single-file Chat + Voice app
+    // Author: generated for WeaversNest GitHub Pages
+    // How to publish: save this file as index.html at the root of your repository dhrubadas1-ship-it/weaversnest-voice-C and push to GitHub.
+    // Then enable Pages (branch: main or gh-pages) in repository Settings → Pages. GitHub Pages will serve it at https://dhrubadas1-ship-it.github.io/weaversnest-voice-C/
 
-  // Inject Chatbase embed script using the full, recommended snippet from Chatbase deploy.
-  // This more closely mirrors the official initializer and avoids missing-style fetch 404s.
-  (function(){
-    // Official-style tiny initializer: creates a window.chatbase proxy and injects embed.min.js on load.
-    try{
-      if(!window.chatbase || window.chatbase("getState") !== "initialized"){
-        window.chatbase = (...arguments) => { if(!window.chatbase.q){ window.chatbase.q = [] } window.chatbase.q.push(arguments); };
-        window.chatbase = new Proxy(window.chatbase, { get(target, prop){ if(prop === "q"){ return target.q } return (...args) => target(prop, ...args) } });
-      }
-    }catch(e){ console.warn('chatbase proxy init', e); }
+    // --- DOM refs ---
+    const chatArea = document.getElementById('chatArea');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const micBtn = document.getElementById('micBtn');
+    const micIcon = document.getElementById('micIcon');
+    const clearBtn = document.getElementById('clearBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const voiceSelect = document.getElementById('voiceSelect');
 
-    const onLoadInit = function(){
-      try{
-        // Prevent double-insert
-        if(document.getElementById(CHATBOT_AGENT_ID)) return;
-        const script = document.createElement('script');
-        script.src = 'https://www.chatbase.co/embed.min.js';
-        // Use the exact agent id as the script id (matches Chatbase's official snippet)
-        script.id = CHATBOT_AGENT_ID;
-        // Some embed versions set a domain attribute; include it to match original snippet
-        script.setAttribute('domain', 'www.chatbase.co');
-        // also set data-agent for compatibility
-        script.setAttribute('data-agent', CHATBOT_AGENT_ID);
-        // set crossOrigin to anonymous for proper fetch handling
-        script.crossOrigin = 'anonymous';
-        script.onload = ()=>{ console.log('chatbase embed loaded'); };
-        script.onerror = (ev)=>{
-          console.error('chatbase embed failed to load', ev);
-          // Fallback: show a small message and a direct link to the Chatbase help page or public chat
-          const wrap = document.getElementById('chatbaseWidgetTarget');
-          if(wrap){
-            wrap.innerHTML = `<div style="padding:18px;font-family:Inter,Arial;color:#374151">
-              <h3>Chat widget failed to load</h3>
-              <p>Please try the chat directly: <a href="https://www.chatbase.co/deploy/help-page" target="_blank">Open Chat</a></p>
-              <p>Or disable any adblocker/privacy extension and reload. Also ensure the agent is published in your Chatbase Deploy settings.</p>
-            </div>`;
-          }
-        };
-        document.body.appendChild(script);
-      }catch(e){ console.warn('inject script', e); }
+    // --- State ---
+    let messages = JSON.parse(localStorage.getItem('wn_messages') || '[]');
+    let recognizing = false;
+    let recognition;
+    let synth = window.speechSynthesis;
+    let voices = [];
+
+    // --- Utilities ---
+    function save() { localStorage.setItem('wn_messages', JSON.stringify(messages)); }
+    function timeNow(){ return new Date().toLocaleTimeString(); }
+
+    function render(){
+      chatArea.innerHTML = '';
+      messages.forEach(m => {
+        const cont = document.createElement('div');
+        cont.className = 'my-3 flex ' + (m.from === 'user' ? 'justify-end' : 'justify-start');
+        const bubble = document.createElement('div');
+        bubble.className = 'message-bubble p-3 rounded-xl ' + (m.from === 'user' ? 'bg-emerald-50 text-slate-900' : 'bg-slate-100 text-slate-900');
+        bubble.innerHTML = `<div class="text-sm">${escapeHtml(m.text)}</div><div class="text-xs text-slate-400 mt-1 text-right">${m.time}</div>`;
+        cont.appendChild(bubble);
+        chatArea.appendChild(cont);
+      });
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function pushMessage(from, text){
+      const m = {from, text, time: timeNow()};
+      messages.push(m);
+      save();
+      render();
+    }
+
+    // --- Mock server handler ---
+    async function sendToServer(text){
+      // Placeholder: replace this function with your server or serverless function
+      // Example: fetch('https://your-server.example.com/api/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message:text})})
+      //           .then(r=>r.json())
+      //           .then(data=> data.reply )
+      // For demo we return a quick canned reply
+      await new Promise(r=>setTimeout(r, 500));
+      return "I heard: '" + text + "' — this is a demo reply. Replace sendToServer() with a network call to your chat AI or backend to get real replies.";
+    }
+
+    // --- Send flow ---
+    async function handleSend(){
+      const text = input.value.trim();
+      if(!text) return;
+      input.value = '';
+      pushMessage('user', text);
+      // show interim
+      pushMessage('bot', '...');
+      // get reply
+      const reply = await sendToServer(text);
+      // replace last bot message
+      messages = messages.slice(0, -1);
+      pushMessage('bot', reply);
+      speak(reply);
+    }
+
+    sendBtn.addEventListener('click', handleSend);
+    input.addEventListener('keydown', e => { if(e.key === 'Enter') handleSend(); });
+
+    clearBtn.addEventListener('click', ()=>{ if(confirm('Clear chat history?')){ messages = []; save(); render(); }});
+
+    downloadBtn.addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(messages, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'weaversnest-chat-log.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+
+    // --- Speech Recognition ---
+    function initRecognition(){
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if(!SpeechRecognition) return null;
+      const r = new SpeechRecognition();
+      r.lang = 'en-IN';
+      r.interimResults = false;
+      r.maxAlternatives = 1;
+      r.onstart = ()=>{ recognizing = true; micIcon.classList.add('animate-pulse'); micIcon.style.fill = '#ef4444'; micIcon.style.color=''; };
+      r.onend = ()=>{ recognizing = false; micIcon.classList.remove('animate-pulse'); micIcon.style.fill=''; };
+      r.onresult = (ev)=>{
+        const text = ev.results[0][0].transcript;
+        input.value = text;
+        handleSend();
+      };
+      r.onerror = e=>{ console.error('Speech recognition error', e); alert('Speech recognition error: '+ (e.error || e.message)); };
+      return r;
+    }
+
+    micBtn.addEventListener('click', ()=>{
+      if(!recognition){ recognition = initRecognition(); if(!recognition){ alert('Speech Recognition API not supported in this browser. Try Chrome or Edge.'); return; } }
+      if(recognizing){ recognition.stop(); }
+      else recognition.start();
+    });
+
+    // --- Speech Synthesis ---
+    function populateVoices(){
+      voices = synth.getVoices();
+      voiceSelect.innerHTML = '';
+      const defaultOpt = document.createElement('option'); defaultOpt.value = 'default'; defaultOpt.textContent = 'Default voice (' + (voices[0]?voices[0].name:'none') + ')'; voiceSelect.appendChild(defaultOpt);
+      voices.forEach((v,i)=>{
+        const o = document.createElement('option'); o.value = i; o.textContent = v.name + (v.lang ? ' — ' + v.lang : ''); voiceSelect.appendChild(o);
+      });
+    }
+
+    function speak(text){
+      if(!synth) return;
+      synth.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      const sel = voiceSelect.value;
+      if(sel !== 'default' && voices[+sel]) u.voice = voices[+sel];
+      u.lang = voices[u.voice ? voices.indexOf(u.voice) : 0]?.lang || 'en-US';
+      synth.speak(u);
+    }
+
+    if(speechSynthesis){
+      populateVoices();
+      if(typeof speechSynthesis.onvoiceschanged !== 'undefined') speechSynthesis.onvoiceschanged = populateVoices;
+    }
+
+    // --- Initialize ---
+    render();
+
+    // Accessibility: focus input on load
+    input.focus();
+
+    // Expose small API for integration (optional)
+    window.WeaversNest = {
+      pushMessage,
+      messages,
+      setServerFunc(fn){ sendToServer = fn; }
     };
-    if(document.readyState === 'complete') onLoadInit(); else window.addEventListener('load', onLoadInit);
-  })();
 
-  // Elements
-  const statusEl = document.getElementById('status');
-  const micBtn = document.getElementById('micBtn');
-  const shareBtn = document.getElementById('shareBtn');
-  const recognizedContainer = document.getElementById('recognizedContainer');
-  const recognizedText = document.getElementById('recognizedText');
-  const copyTextBtn = document.getElementById('copyTextBtn');
+    // Example: to connect to a real backend, in your own code call:
+    // WeaversNest.setServerFunc(async (text)=>{ const r = await fetch('https://your-server.example.com/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})}); const j=await r.json(); return j.reply; });
 
-  // Speech recognition setup
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
-  let recognition = null;
-  let listening = false;
-
-  if(SpeechRecognition){
-    recognition = new SpeechRecognition();
-    recognition.lang = 'en-IN';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-      listening = true; micBtn.classList.add('listening'); statusEl.textContent = 'Listening... Speak now.';
-    };
-    recognition.onend = () => {
-      listening = false; micBtn.classList.remove('listening'); statusEl.textContent = 'Processing...';
-    };
-    recognition.onerror = (e) => {
-      listening = false; micBtn.classList.remove('listening'); statusEl.textContent = 'Voice error: '+(e.error||e.message);
-    };
-    recognition.onresult = (event) => {
-      const text = event.results[0][0].transcript;
-      statusEl.textContent = 'You said: "' + text + '" — attempting to send to chatbot...';
-      postToWidgetOrShow(text);
-    };
-  } else {
-    statusEl.textContent = 'Voice not supported in this browser. Use Chrome/Edge on desktop or Android for best results.';
-  }
-
-  micBtn.addEventListener('click', async () => {
-    if(!SpeechRecognition){
-      alert('Voice recognition not supported in your browser.'); return;
-    }
-
-    try{
-      if(listening){ recognition.stop(); }
-      else { recognition.start(); }
-    }catch(err){ console.warn(err); }
-  });
-
-  // Try to post message to Chatbase widget iframe; if not possible, show recognized text and require user to press Copy (user gesture needed for clipboard)
-  <script>
-/* --- Replacement: improved openChatWidget + postToWidgetOrShow --- */
-
-function openChatWidget(){
-  // Try common launcher selectors and click the first we find
-  const selectors = [
-    '[aria-label="open chat"]',
-    '[aria-label="Open chat"]',
-    '[aria-label="Chat"]',
-    '.cb-chat-button',
-    '.chatbase-widget-button',
-    '.cb-launcher',
-    '#chatbaseWidgetTarget button',
-    '.cbbf-button',
-    '.cb-toggle'
-  ];
-
-  for(const s of selectors){
-    try {
-      const el = document.querySelector(s);
-      if(el){
-        el.click();
-        console.log('Clicked launcher:', s);
-        return true;
-      }
-    } catch(e){
-      console.warn('openChatWidget selector error', e);
-    }
-  }
-
-  // If no launcher element found, try focusing the widget container
-  const wrap = document.getElementById('chatbaseWidgetTarget');
-  if(wrap){
-    wrap.scrollIntoView({behavior:'smooth', block:'center'});
-    console.log('Scrolled widget target into view');
-    return true;
-  }
-
-  console.log('No launcher found to open the chat widget.');
-  return false;
-}
-
-function postToWidgetOrShow(text){
-  const iframe = document.querySelector('iframe');
-  const tryPost = (msg) => {
-    if(!iframe || !iframe.contentWindow) return false;
-    try {
-      iframe.contentWindow.postMessage(msg, '*');
-      console.log('posted to iframe:', msg);
-      return true;
-    } catch(e){
-      console.warn('postMessage failed for', msg, e);
-      return false;
-    }
-  };
-
-  // 1) If chat launcher exists, open it (user-visible), then try posting after short delays
-  const opened = openChatWidget();
-
-  // Send a quick focus hint first (some widgets accept this)
-  const focusHint = { type: 'focus_input', source: 'voice_pwa' };
-  const shapes = [
-    {type: 'user_utterance', text},
-    {event: 'message', payload: {text}},
-    {type: 'message', message: text},
-    {action: 'sendMessage', data: {text}},
-    {source: 'web', text},
-    {message: text}
-  ];
-
-  // Try multiple attempts: immediate, after 250ms, after 600ms
-  const attemptPostSequence = async () => {
-    if(iframe && iframe.contentWindow){
-      // attempt focus hint first
-      tryPost(focusHint);
-    }
-    for(const delay of [0, 250, 600, 1000]){
-      await new Promise(r => setTimeout(r, delay));
-      // try posting several shapes each attempt
-      for(const s of shapes){
-        if(tryPost(s)){
-          statusEl.textContent = 'Sent to chatbot.';
-          recognizedContainer.style.display = 'none';
-          // ensure widget is visible
-          openChatWidget();
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  attemptPostSequence().then(ok => {
-    if(ok) return;
-    // fallback: show recognized text and ask user to copy/paste
-    recognizedText.value = text;
-    recognizedContainer.style.display = 'flex';
-    statusEl.textContent = 'Could not send automatically — Tap Copy then paste into the chat.';
-    // open chat so user can paste
-    setTimeout(() => openChatWidget(), 250);
-  }).catch(err => {
-    console.warn('post attempt error', err);
-    recognizedText.value = text;
-    recognizedContainer.style.display = 'flex';
-    statusEl.textContent = 'Could not send automatically — Tap Copy then paste into the chat.';
-    setTimeout(() => openChatWidget(), 250);
-  });
-}
-</script>
-  // Try to open/activate the chat widget (best effort): click known widget toggle if present
-  function openChatWidget(){
-    // Many widgets create a button with aria-label or role; try common selectors
-    const selectors = [
-      '[aria-label="open chat"]',
-      '[aria-label="Open chat"]',
-      '[aria-label="Chat"]',
-      '.cb-chat-button',
-      '.chatbase-widget-button',
-      '.cb-launcher',
-      '#chatbaseWidgetTarget button'
-    ];
-    for(const s of selectors){
-      try{
-        const el = document.querySelector(s);
-        if(el){ el.click(); return; }
-      }catch(e){}
-    }
-  }
-
-  // Speak bot replies if the widget posts messages (some widgets do); otherwise user reads text
-  function speak(text){
-    if(!('speechSynthesis' in window)) return;
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'en-IN';
-    u.rate = 1;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  }
-
-  window.addEventListener('message', (ev)=>{
-    try{
-      const d = ev.data;
-      if(!d) return;
-      // Some widgets may post structured messages; best-effort: look for text
-      if(d.type === 'bot_reply' && d.text){ speak(d.text); }
-      if(d.type === 'chatbase.reply' && d.message){ speak(d.message); }
-    }catch(e){console.warn('message handler',e)}
-  });
-
-  // PWA install handling (unchanged)
-  let deferredPrompt = null;
-  window.addEventListener('beforeinstallprompt', (e)=>{
-    e.preventDefault(); deferredPrompt = e; document.getElementById('installBtn').style.display='inline-block';
-  });
-  document.getElementById('installBtn').addEventListener('click', async ()=>{
-    if(!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const choice = await deferredPrompt.userChoice;
-    deferredPrompt = null; document.getElementById('installBtn').style.display='none';
-  });
   </script>
 </body>
 </html>
