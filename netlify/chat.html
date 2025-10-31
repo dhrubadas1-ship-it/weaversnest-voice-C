@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WeaversNest Eco-Tourism Project</title>
+  <meta name="description" content="Community, culture, and conservation near Nameri National Park" />
+
+  <!-- Keep your existing stylesheet/colors -->
+  <!-- If you already have styles.css, this will keep your colors and typography -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Optional: component-local styles for the new header+gallery (scoped by .wn-wrapper) -->
+  <style>
+    :root{
+      /* If your existing theme defines these, they will override these fallbacks */
+      --bg: #0b0f14;
+      --card: #121821;
+      --text: #e8eef6;
+      --muted: #9db0c9;
+      --brand: #3ab0ff;
+      --ring: #3ab0ff44;
+    }
+    body{background:var(--bg);color:var(--text)}
+    .wn-wrapper *{box-sizing:border-box}
+    .wn-wrapper a{color:inherit;text-decoration:none}
+    .wn-wrapper img{max-width:100%;display:block}
+
+    /* Header */
+    .wn-header{position:sticky;top:0;z-index:10;backdrop-filter:saturate(140%) blur(8px);
+      background:linear-gradient(to bottom, #0b0f14cc, #0b0f1400);border-bottom:1px solid #1e2937}
+    .wn-wrap{max-width:1100px;margin:0 auto;padding:14px 18px}
+    .wn-row{display:flex;align-items:center;gap:14px}
+    .wn-grow{flex:1}
+    .wn-logo{display:flex;align-items:center;gap:10px}
+    .wn-logo img{width:44px;height:44px;object-fit:contain}
+    .wn-brand{font-weight:700;letter-spacing:.4px}
+    .wn-cta{display:inline-flex;align-items:center;gap:10px;background:var(--brand);color:#00121c;border:none;padding:10px 16px;border-radius:12px;font-weight:700;cursor:pointer}
+    .wn-cta:focus-visible{outline:3px solid var(--ring)}
+
+    /* Hero */
+    .wn-hero{padding:48px 18px 22px;background:
+        radial-gradient(1200px 500px at 70% -20%, #3ab0ff15, transparent 60%),
+        radial-gradient(800px 400px at 10% 0%, #8ad6ff10, transparent 55%)}
+    .wn-hero-inner{max-width:1100px;margin:0 auto;display:grid;gap:20px}
+    .wn-hero h1{font-size:clamp(28px,3.6vw,44px);margin:0 0 6px}
+    .wn-hero p{color:var(--muted);font-size:clamp(14px,1.3vw,18px);margin:0}
+
+    /* Cards/Gallery */
+    .wn-cards{display:grid;gap:16px;padding:24px 18px;max-width:1100px;margin:0 auto;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+    .wn-card{background:var(--card);border:1px solid #1e2937;border-radius:16px;overflow:hidden}
+    .wn-card img{aspect-ratio:4/3;object-fit:cover}
+    .wn-card figcaption{padding:12px 12px 14px}
+    .wn-muted{color:var(--muted)}
+
+    /* Footer */
+    .wn-footer{border-top:1px solid #1e2937;margin-top:28px}
+    .wn-foot{max-width:1100px;margin:0 auto;padding:16px 18px;color:#a8b6c8}
+
+    /* Optional: a non-intrusive container to mount your existing chatbot */
+    .wn-chat-dock{position:fixed;right:16px;bottom:16px;z-index:50}
+    .wn-chat-toggle{border:0;border-radius:999px;padding:12px 16px;background:var(--brand);color:#00121c;font-weight:700;cursor:pointer}
+    .wn-chat-panel{position:fixed;right:16px;bottom:72px;width:min(380px,92vw);height:65vh;background:#0b1220;border:1px solid #1e2937;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.5);display:none;overflow:hidden}
+    .wn-chat-panel.open{display:block}
+    .wn-chat-panel iframe{width:100%;height:100%;border:0}
+  </style>
+</head>
+<body>
+
+  <!-- ======== EXISTING CONTENT (kept) ======== -->
+  <!-- If you already have hero/sections in your current page, leave them as-is. -->
+
+  <!-- ======== NEW HEADER + HERO + GALLERY WRAPPER ======== -->
+  <div class="wn-wrapper">
+    <header class="wn-header">
+      <div class="wn-wrap wn-row">
+        <a class="wn-logo" href="/">
+          <!-- Your logo file (place it in assets/images/logo.png) -->
+          <img src="assets/images/logo.png" alt="WeaversNest logo" width="44" height="44" />
+          <span class="wn-brand">WeaversNest</span>
+        </a>
+        <div class="wn-grow"></div>
+        <a class="wn-cta" href="#gallery" aria-label="Skip to photo gallery">View Photos</a>
+      </div>
+    </header>
+
+    <section class="wn-hero">
+      <div class="wn-hero-inner">
+        <h1>Community, culture, and conservation near Nameri National Park</h1>
+        <p>Eco-homestays, weaving traditions, and guided experiences with local communities.</p>
+      </div>
+    </section>
+
+    <!-- Photo Gallery (images must be in /assets/images) -->
+    <main id="gallery" class="wn-cards" aria-label="Photo gallery">
+      <figure class="wn-card">
+        <img src="assets/images/photo-a.jpg" alt="Weaving scene and homestay ambience" loading="lazy" />
+        <figcaption>
+          <div>Craft &amp; Culture</div>
+          <div class="wn-muted">Handlooms, colors, textures.</div>
+        </figcaption>
+      </figure>
+
+      <figure class="wn-card">
+        <img src="assets/images/photo-c.jpg" alt="Green landscape and riverside" loading="lazy" />
+        <figcaption>
+          <div>Nature Trails</div>
+          <div class="wn-muted">Walks near forests &amp; rivers.</div>
+        </figcaption>
+      </figure>
+
+      <figure class="wn-card">
+        <img src="assets/images/photo-d.jpg" alt="Homestay exterior in the evening" loading="lazy" />
+        <figcaption>
+          <div>Homestays</div>
+          <div class="wn-muted">Simple, cozy, community-run.</div>
+        </figcaption>
+      </figure>
+
+      <figure class="wn-card">
+        <img src="assets/images/photo-e.jpg" alt="Local cuisine served on traditional plates" loading="lazy" />
+        <figcaption>
+          <div>Local Food</div>
+          <div class="wn-muted">Seasonal, homely, authentic.</div>
+        </figcaption>
+      </figure>
+    </main>
+
+    <footer class="wn-footer">
+      <div class="wn-foot">© <span id="year"></span> WeaversNest Eco Project | Built with community spirit</div>
+    </footer>
+  </div>
+
+  <!-- ======== CHATBOT (KEPT): paste your existing widget below ======== -->
+  <!-- If you are using Chatbase or any other provider, paste their <script> snippet inside the panel.
+       This keeps your same chatbot and colors. If you already have a floating bubble from them,
+       you can delete the wn-chat-dock and wn-chat-panel blocks below to avoid duplicates. -->
+  <div class="wn-chat-dock">
+    <button class="wn-chat-toggle" id="wnChatToggle" aria-expanded="false">Chat</button>
+  </div>
+  <div class="wn-chat-panel" id="wnChatPanel" aria-hidden="true">
+    <!-- PASTE YOUR EXISTING CHATBOT SNIPPET HERE. Example (Chatbase iframe):
+    <iframe src="https://www.chatbase.co/chatbot-iframe/CHATBOT_ID?theme=dark" allow="microphone; clipboard-write"></iframe>
+    -->
+  </div>
+
+  <script>
+    // Keep current year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Simple chat toggle (optional)
+    const toggle = document.getElementById('wnChatToggle');
+    const panel = document.getElementById('wnChatPanel');
+    if (toggle && panel) {
+      toggle.addEventListener('click', () => {
+        const open = panel.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', String(open));
+        panel.setAttribute('aria-hidden', String(!open));
+      });
+    }
+  </script>
+  <!-- ===== Diagnostics: image load + chat iframe checker ===== -->
+  <script>
+    (function(){
+      // Image diagnostics
+      const gallery = document.getElementById('gallery');
+      if (gallery) {
+        const imgs = gallery.querySelectorAll('img');
+        imgs.forEach(img => {
+          img.addEventListener('error', () => {
+            const wrap = document.createElement('div');
+            wrap.style.position = 'relative';
+            wrap.style.background = '#1b2431';
+            wrap.style.display = 'grid';
+            wrap.style.placeItems = 'center';
+            wrap.style.aspectRatio = '4/3';
+            wrap.innerHTML = '<div style="color:#ff6b6b;font-weight:700;padding:10px;text-align:center">Missing: '+img.getAttribute('src')+'</div>';
+            img.replaceWith(wrap);
+            toast('Image not found → ' + (location.origin + '/' + (img.getAttribute('src')||'')));
+          }, {once:true});
+        });
+      }
+
+      // Chat iframe diagnostics (if present)
+      const chat = document.querySelector('.wn-chat-panel iframe');
+      if (chat) {
+        let ok = false;
+        chat.addEventListener('load', () => { ok = true; });
+        setTimeout(() => { if (!ok) toast('Chat iframe did not finish loading. Check the embed URL, HTTPS, and domain allowlist.'); }, 5000);
+      }
+
+      function toast(msg){
+        const t = document.createElement('div');
+        t.textContent = msg;
+        t.style.position = 'fixed';
+        t.style.left = '50%';
+        t.style.bottom = '16px';
+        t.style.transform = 'translateX(-50%)';
+        t.style.background = '#111827';
+        t.style.border = '1px solid #374151';
+        t.style.padding = '10px 14px';
+        t.style.borderRadius = '10px';
+        t.style.color = 'white';
+        t.style.zIndex = '9999';
+        document.body.appendChild(t);
+        setTimeout(()=>t.remove(), 4500);
+      }
+    })();
+  </script>
+</body>
+</html>
