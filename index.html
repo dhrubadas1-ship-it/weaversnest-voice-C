@@ -2,149 +2,140 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WeaversNest — Voice + Chatbase (Netlify)</title>
-  <style>
-    body { margin:0; font-family:Arial,system-ui; background:#f6f7fb; min-height:100vh; }
-    #voiceBtn { position:fixed; right:20px; bottom:90px; width:64px; height:64px; border-radius:50%; border:0; background:#ff3b30; color:#fff; font-size:28px; cursor:pointer; box-shadow:0 6px 20px rgba(0,0,0,.16); z-index:9999; }
-    #voiceBtn.active{ background:#16a34a; animation:pulse 1.2s infinite; }
-    @keyframes pulse {0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
-    #replyToast { position:fixed; right:20px; bottom:170px; max-width:420px; background:#fff; border-radius:10px; padding:12px 14px; box-shadow:0 8px 30px rgba(0,0,0,.12); z-index:9998; display:none; font-size:14px; color:#081124; }
-    #replyToast .label { font-size:12px; color:#6b7280; margin-bottom:6px; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WeaversNest Eco-Tourism Project</title>
+  <meta name="description" content="Community, culture, and conservation near Nameri National Park" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo-spot">
+        <img src="assets/images/logo.png" alt="WeaversNest logo">
+      </div>
+      <div class="title-block">
+        <h1>WeaversNest</h1>
+        <div class="tagline">Community, culture, and conservation near Nameri National Park</div>
+      </div>
+    </div>
+  </header>
 
-  <!-- Chatbase embed (agent id prefilled) -->
+  <main class="container">
+    <!-- HERO card with big logo + buttons -->
+    <section class="cards" style="margin-bottom:18px;">
+      <article class="card hero-card">
+        <div class="card-media">
+          <!-- Big hero logo -->
+          <img class="hero-logo" src="assets/images/logo.png" alt="WeaversNest hero logo">
+        </div>
+        <div class="card-content">
+          <h2>Plan your eco-stay and experiences</h2>
+          <p>Eco-homestays, weaving traditions, and guided experiences with local communities.</p>
+
+          <div class="actions">
+            <!-- Book Now -->
+            <button id="bookNow" class="btn">🧾 Book Now</button>
+
+            <!-- GPT link (blue button) -->
+            <a class="btn secondary"
+               href="https://chatgpt.com/g/g-690236abe5148191b7c8ee572160f671-weaversnest-tourism-assistant"
+               target="_blank" rel="noopener">
+              Open – WeaversNest Tourism Assistant
+            </a>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Feature cards with photos -->
+    <section class="cards">
+      <article class="card">
+        <div class="card-media">
+          <img src="assets/images/photo-a.jpg" alt="Weaving scene and homestay ambience">
+        </div>
+        <div class="card-content">
+          <h2>Craft &amp; Culture</h2>
+          <p>Colors, textures, and stories from local weaving communities.</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-media">
+          <img src="assets/images/photo-c.jpg" alt="Green landscape and riverside">
+        </div>
+        <div class="card-content">
+          <h2>Nature Trails</h2>
+          <p>Guided experiences near forests and rivers around Nameri.</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-media">
+          <img src="assets/images/photo-d.jpg" alt="Homestay exterior in the evening">
+        </div>
+        <div class="card-content">
+          <h2>Homestays</h2>
+          <p>Simple, cozy, and community-run hospitality.</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-media">
+          <img src="assets/images/photo-e.jpg" alt="Local cuisine served on traditional plates">
+        </div>
+        <div class="card-content">
+          <h2>Local Food</h2>
+          <p>Seasonal, homely, and authentic meals.</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Partners -->
+    <section class="partners">
+      <h2>Our Partners</h2>
+      <p class="sub">Working together for eco-tourism and conservation.</p>
+
+      <div class="partner-grid">
+        <figure class="partner-card">
+          <img src="assets/images/thepostcardhotel_logo.png"
+               alt="Partner: The Postcard Hotel logo" loading="lazy">
+        </figure>
+
+        <figure class="partner-card">
+          <img src="assets/images/wild_mahseer_logo.png"
+               alt="Partner: Wild Mahseer logo" loading="lazy">
+        </figure>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    © <span id="year"></span> WeaversNest Eco Project • Built with community spirit
+  </footer>
+
   <script>
-  (function(){
-    if(!window.chatbase||window.chatbase("getState")!=="initialized"){
-      window.chatbase=(...arguments)=>{ if(!window.chatbase.q){window.chatbase.q=[]} window.chatbase.q.push(arguments) };
-      window.chatbase=new Proxy(window.chatbase,{ get(target,prop){ if(prop==="q"){return target.q} return(...args)=>target(prop,...args) }});
-    }
-    const onLoad=function(){
-      const script=document.createElement("script");
-      script.src="https://www.chatbase.co/embed.min.js";
-      script.id="xYe8wmdbOM5iVwIDOCkGk"; // your Agent ID
-      script.domain="www.chatbase.co";
-      document.body.appendChild(script);
-    };
-    if(document.readyState==="complete"){ onLoad(); } else { window.addEventListener("load", onLoad); }
-  })();
-  </script>
+    // Footer year
+    document.getElementById('year').textContent = new Date().getFullYear();
 
-  <!-- floating mic -->
-  <button id="voiceBtn" title="Speak">🎤</button>
-
-  <!-- small toast for proxy replies -->
-  <div id="replyToast" role="status" aria-live="polite">
-    <div class="label">Assistant (from proxy):</div>
-    <div id="replyText"></div>
-  </div>
-
-  <script>
-    // ---------------- CONFIG ----------------
-    // When hosting on Netlify (both frontend + functions), use the relative path below:
-    let SERVER_ENDPOINT = '/.netlify/functions/chat';
-    // ----------------------------------------
-
-    const voiceBtn = document.getElementById('voiceBtn');
-    const replyToast = document.getElementById('replyToast');
-    const replyText = document.getElementById('replyText');
-
-    const synth = window.speechSynthesis;
-    let voices = [];
-    function populateVoices(){ voices = synth.getVoices(); }
-    if (speechSynthesis) { populateVoices(); if (typeof speechSynthesis.onvoiceschanged !== 'undefined') speechSynthesis.onvoiceschanged = populateVoices; }
-
-    function speak(text){
-      try {
-        if (!text || !('speechSynthesis' in window)) return;
-        synth.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang = 'en-IN';
-        if (voices && voices.length) u.voice = voices.find(v=>v.lang && v.lang.toLowerCase().includes('en')) || voices[0];
-        synth.speak(u);
-      } catch (e) { console.warn('TTS failed', e); }
-    }
-
-    function showReplyToast(text){
-      replyText.textContent = text;
-      replyToast.style.display = 'block';
-      clearTimeout(showReplyToast._t);
-      showReplyToast._t = setTimeout(()=> replyToast.style.display = 'none', 7000);
-    }
-
-    async function sendToProxy(message){
-      try {
-        const r = await fetch(SERVER_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type':'application/json' },
-          body: JSON.stringify({ message })
-        });
-        if (!r.ok) {
-          const t = await r.text();
-          console.error('Proxy error', r.status, t);
-          return { error:true, text: 'Proxy error ' + r.status };
-        }
-        const j = await r.json();
-        return { error:false, text: j.reply || j.result || j.message || '' };
-      } catch (err) {
-        console.error('Network/proxy error', err);
-        return { error:true, text: 'Network error' };
-      }
-    }
-
-    // Speech recognition flow
-    let recognition, recognizing=false;
-    function initRecognition(){
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) return null;
-      const r = new SR();
-      r.lang = 'en-IN';
-      r.interimResults = false;
-      r.maxAlternatives = 1;
-      r.onstart = ()=>{ recognizing = true; voiceBtn.classList.add('active'); };
-      r.onend   = ()=>{ recognizing = false; voiceBtn.classList.remove('active'); };
-      r.onresult = async (ev) => {
-        const text = ev.results[0][0].transcript.trim();
-        console.log('Heard:', text);
-        // Open the widget UI if available
-        try { window.chatbase && window.chatbase.open && window.chatbase.open(); } catch(e){ /* ignore */ }
-        // Send to your Netlify function (proxy)
-        const res = await sendToProxy(text);
-        if (res.error) {
-          showReplyToast('[Error] ' + res.text);
-          speak('[Error] ' + res.text);
-        } else {
-          const reply = res.text || '(no response)';
-          showReplyToast(reply);
-          speak(reply);
-        }
-      };
-      r.onerror = (e)=>{ console.error('Recognition error', e); alert('Speech recognition error: '+(e.error||e.message||e)); };
-      return r;
-    }
-
-    voiceBtn.addEventListener('click', ()=>{
-      if (!recognition) recognition = initRecognition();
-      if (!recognition) { alert('Speech Recognition not available in this browser. Use Chrome/Edge.'); return; }
-      if (recognizing) recognition.stop(); else recognition.start();
+    // Book Now button
+    document.getElementById('bookNow').addEventListener('click', () => {
+      window.open(
+        "https://docs.google.com/forms/d/e/1FAIpQLScU0QK_QSIR3etRJDKjnxUHB8Un0VEzdcKyiNjO2RADOcFBBQ/viewform?usp=header",
+        "_blank",
+        "noopener"
+      );
     });
 
-    // If chatbase widget emits assistant messages, speak them too (best-effort)
-    window.addEventListener('load', ()=>{
-      try {
-        if (window.chatbase && typeof window.chatbase.addEventListener === 'function') {
-          window.chatbase.addEventListener('assistant-message', (ev)=> {
-            const content = ev?.data?.content;
-            if (content) { speak(content); showReplyToast(content); }
-          });
-        }
-      } catch(e){ console.warn('chatbase event hook failed', e); }
+    // ✅ Auto-open the Google Form on page load
+    window.addEventListener("load", () => {
+      window.open(
+        "https://docs.google.com/forms/d/e/1FAIpQLScU0QK_QSIR3etRJDKjnxUHB8Un0VEzdcKyiNjO2RADOcFBBQ/viewform?usp=header",
+        "_blank",
+        "noopener"
+      );
     });
-
-    console.info('Voice->proxy ready. SERVER_ENDPOINT =', SERVER_ENDPOINT);
   </script>
 </body>
 </html>
